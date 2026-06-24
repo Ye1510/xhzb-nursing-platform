@@ -1,0 +1,81 @@
+# 项目相关配置
+ruoyi:
+  # 名称
+  name: 星海智伴
+  # 版本
+  version: 3.9.0
+  # 版权年份
+  copyrightYear: 2025
+  # 文件路径（Windows 示例：D:/xhzb/uploadPath，Linux 示例：/home/xhzb/uploadPath）
+  profile: ${XHZB_UPLOAD_PATH:/home/xhzb/uploadPath}
+  # 获取ip地址开关
+  addressEnabled: false
+  # 验证码类型 math 数字计算 char 字符验证
+  captchaType: math
+
+# 激活环境
+spring:
+  profiles:
+    active: dev
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}  #读取环境变量中的api key
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      chat:
+        options:
+          model: qwen3.7-max
+      embedding:
+        options:
+          model: text-embedding-v3
+          dimensions: 1024
+# 用户配置
+user:
+  password:
+    # 密码最大错误次数
+    maxRetryCount: 5
+    # 密码锁定时间（默认10分钟）
+    lockTime: 10
+
+# token配置
+token:
+  # 令牌自定义标识
+  header: Authorization
+  # 令牌密钥（必须通过环境变量注入，请自行生成足够长度的随机串）
+  secret: ${JWT_SECRET}
+  # 令牌有效期（默认30分钟）
+  expireTime: 30
+# MyBatisPlus配置
+mybatis-plus:
+  # 搜索指定包别名
+  typeAliasesPackage: com.xhzb.**.domain
+  # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath*:mapper/**/*Mapper.xml
+  # 全局配置
+  global-config:
+    db-config:
+      id-type: auto   #id生成策略为自增
+  configuration:
+    map-underscore-to-camel-case: true    #字段与属性，自动转换为驼峰命名
+
+# PageHelper分页插件
+pagehelper:
+  helperDialect: mysql
+  supportMethodsArguments: true
+  params: count=countSql
+
+# Swagger配置
+swagger:
+  # 是否开启swagger
+  enabled: true
+  # 请求前缀
+  pathMapping: /dev-api
+
+# 防止XSS攻击
+xss:
+  # 过滤开关
+  enabled: true
+  # 排除链接（多个用逗号分隔）
+  excludes: /system/notice
+  # 匹配链接
+  urlPatterns: /system/*,/monitor/*,/tool/*
+

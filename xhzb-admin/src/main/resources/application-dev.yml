@@ -1,0 +1,110 @@
+# 开发环境配置
+server:
+  # 服务器的HTTP端口，默认为8080
+  port: 8080
+  servlet:
+    # 应用的访问路径
+    context-path: /
+  tomcat:
+    # tomcat的URI编码
+    uri-encoding: UTF-8
+    # 连接数满后的排队数，默认为100
+    accept-count: 1000
+    threads:
+      # tomcat最大线程数，默认为200
+      max: 800
+      # Tomcat启动初始化的线程数，默认值10
+      min-spare: 100
+
+# 日志配置
+logging:
+  level:
+    com.xhzb: debug
+    org.springframework: warn
+    org.springframework.ai: debug # AI对话的日志级别
+# Spring配置
+spring:
+  # 资源信息
+  messages:
+    # 国际化资源文件路径
+    basename: i18n/messages
+  # 文件上传
+  servlet:
+    multipart:
+      # 单个文件大小
+      max-file-size: 10MB
+      # 设置总上传的文件大小
+      max-request-size: 20MB
+  # 服务模块
+  devtools:
+    restart:
+      # 热部署开关
+      enabled: true
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:xhzb}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+  # redis 配置
+  data:
+    redis:
+      # 地址
+      host: ${REDIS_HOST:localhost}
+      # 端口，默认为6379
+      port: ${REDIS_PORT:6379}
+      # 数据库索引
+      database: 0
+      # 密码（无密码时留空）
+      password: ${REDIS_PASSWORD}
+      # 连接超时时间
+      timeout: 10s
+      jedis:
+        pool:
+          enabled: true
+# Springdoc配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+  group-configs:
+    - group: 'default'
+      display-name: '测试模块'
+      paths-to-match: '/**'
+      packages-to-scan: com.xhzb
+# oss的配置，要根据自己实际情况来进行修改
+oss:
+  endpoint: ${OSS_ENDPOINT:oss-cn-guangzhou.aliyuncs.com}
+  accessKeyId: ${OSS_ACCESS_KEY_ID}
+  accessKeySecret: ${OSS_ACCESS_KEY_SECRET}
+  bucketName: ${OSS_BUCKET_NAME:xhzb}
+
+# Redis Stack 向量库（Spring AI RAG 使用，需单独部署 redis-stack）
+xhzb:
+  vector-store:
+    host: ${VECTOR_STORE_HOST:localhost}
+    port: ${VECTOR_STORE_PORT:6378}
+
+huaweicloud:
+  # 华为云凭证请通过环境变量配置，切勿硬编码提交：
+  #   HUAWEI_CLOUD_AK / HUAWEI_CLOUD_SK / HUAWEI_IOT_ACCESS_KEY / HUAWEI_IOT_ACCESS_CODE
+  ak: ${HUAWEI_CLOUD_AK}
+  sk: ${HUAWEI_CLOUD_SK}
+  #如果是上海一，请填写"cn-east-3"；如果是北京四，请填写"cn-north-4";
+  regionId: ${HUAWEI_IOT_REGION:cn-north-4}
+  # IoTDA 应用接入地址，请替换为自己在华为云 IoTDA 控制台的应用接入域名
+  endpoint: ${HUAWEI_IOT_ENDPOINT}
+  projectId: ${HUAWEI_IOT_PROJECT_ID}
+  #amqp 相关配置，用于订阅设备数据上报
+  host: ${HUAWEI_IOT_ENDPOINT}
+  accessKey: ${HUAWEI_IOT_ACCESS_KEY}
+  accessCode: ${HUAWEI_IOT_ACCESS_CODE}
+  queueName: DefaultQueue   #默认无需改动
+
+# 微信小程序配置
+wx:
+  miniapp:
+    appid: ${WX_MINIAPP_APPID}
+    secret: ${WX_MINIAPP_SECRET}
