@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhzb.nursing.mapper.RoomMapper">
+    
+    <resultMap type="Room" id="RoomResult">
+        <result property="id"    column="id"    />
+        <result property="code"    column="code"    />
+        <result property="sort"    column="sort"    />
+        <result property="typeName"    column="type_name"    />
+        <result property="floorId"    column="floor_id"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="isDeleted"    column="is_deleted"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectRoomVo">
+        select id, code, sort, type_name, floor_id, create_time, update_time, is_deleted, create_by, update_by, remark from room
+    </sql>
+
+    <select id="selectRoomList" parameterType="Room" resultMap="RoomResult">
+        <include refid="selectRoomVo"/>
+        <where>  
+            <if test="code != null  and code != ''"> and code = #{code}</if>
+            <if test="sort != null "> and sort = #{sort}</if>
+            <if test="typeName != null  and typeName != ''"> and type_name like concat('%', #{typeName}, '%')</if>
+            <if test="floorId != null "> and floor_id = #{floorId}</if>
+            <if test="isDeleted != null "> and is_deleted = #{isDeleted}</if>
+        </where>
+    </select>
+    
+    <select id="selectRoomById" parameterType="Long" resultMap="RoomResult">
+        <include refid="selectRoomVo"/>
+        where id = #{id}
+    </select>
+
+
+    <resultMap id="roomVoResultMap" type="com.xhzb.nursing.domain.vo.RoomVo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="floorId" column="floor_id"/>
+        <result property="floorName" column="fname"/>
+        <result column="price" property="price"/>
+        <collection property="bedVoList" ofType="com.xhzb.nursing.domain.vo.BedVo">
+            <id column="bid" property="id"/>
+            <result column="bed_number" property="bedNumber"/>
+            <result column="bed_status" property="bedStatus"/>
+            <result column="room_id" property="roomId"/>
+            <result column="ename" property="ename"/>
+            <result column="eid" property="elderId"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectByFloorId" resultMap="roomVoResultMap">
+        select r.*,
+               f.name  as fname,
+               rt.*,
+               b.id    as bid,
+               b.bed_number,
+               b.sort,
+               b.bed_status,
+               b.room_id,
+               b.create_by,
+               b.update_by,
+               b.remark,
+               b.create_time,
+               b.update_time,
+               e.name  as ename,
+               e.id    as eid
+        from room r
+                 left join floor f on f.id = r.floor_id
+                 left join room_type rt on rt.name = r.type_name
+                 left join bed b on b.room_id = r.id
+                 left join elder e on b.id = e.bed_id
+        where r.floor_id = #{floorId}
+        order by r.sort, r.create_time desc
+    </select>
+
+
+
+    <resultMap id="roomVoWithNurResultMap" type="com.xhzb.nursing.domain.vo.RoomVo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="floorId" column="floor_id"/>
+        <result property="floorName" column="fname"/>
+        <result column="price" property="price"/>
+        <collection property="bedVoList" ofType="com.xhzb.nursing.domain.vo.BedVo">
+            <id column="bid" property="id"/>
+            <result column="bed_number" property="bedNumber"/>
+            <result column="bed_status" property="bedStatus"/>
+            <result column="room_id" property="roomId"/>
+            <result column="ename" property="ename"/>
+            <result column="eid" property="elderId"/>
+            <collection property="userVos" ofType="com.xhzb.common.core.domain.entity.SysUser" column="eid"
+                        select="com.xhzb.nursing.mapper.NursingElderMapper.selectUserByElderId">
+                <result column="nick_name" property="nickName"/>
+                <result column="userId" property="userId"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="selectByFloorIdWithNur" resultMap="roomVoWithNurResultMap">
+        select r.id, r.code, r.floor_id, r.sort, r.type_name, r.is_deleted,
+               r.create_time, r.update_time, r.create_by, r.update_by, r.remark,
+               f.name as fname,
+               rt.price as price,
+               b.id   as bid,
+               b.bed_number,
+               b.sort,
+               b.bed_status,
+               b.room_id,
+               e.name as ename,
+               e.id   as eid
+        from room r
+                 left join floor f on f.id = r.floor_id
+                 left join room_type rt on rt.name = r.type_name
+                 left join bed b on b.room_id = r.id
+                 left join elder e on e.bed_id = b.id
+        where r.floor_id = #{floorId}
+          and e.id is not null
+        order by r.sort, r.create_time desc
+    </select>
+
+    <insert id="insertRoom" parameterType="Room" useGeneratedKeys="true" keyProperty="id">
+        insert into room
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="code != null">code,</if>
+            <if test="sort != null">sort,</if>
+            <if test="typeName != null">type_name,</if>
+            <if test="floorId != null">floor_id,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="isDeleted != null">is_deleted,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="code != null">#{code},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="typeName != null">#{typeName},</if>
+            <if test="floorId != null">#{floorId},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="isDeleted != null">#{isDeleted},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRoom" parameterType="Room">
+        update room
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="code != null">code = #{code},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="typeName != null">type_name = #{typeName},</if>
+            <if test="floorId != null">floor_id = #{floorId},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="isDeleted != null">is_deleted = #{isDeleted},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRoomById" parameterType="Long">
+        delete from room where id = #{id}
+    </delete>
+
+    <delete id="deleteRoomByIds" parameterType="String">
+        delete from room where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <resultMap id="roomOneVoResultMap" type="com.xhzb.nursing.domain.vo.RoomOneVo">
+        <result column="floorName" property="floorName"/>
+        <result column="floorId" property="floorId"/>
+        <result column="roomId" property="roomId"/>
+        <result column="code" property="code"/>
+        <result column="price" property="price"/>
+    </resultMap>
+
+    <select id="selectRoomOneById" parameterType="Long" resultMap="roomOneVoResultMap">
+        select r.id    as roomId,
+               r.code  as code,
+               f.id    as floorId,
+               f.name  as floorName,
+               rt.price as price
+        from room r
+                 left join floor f on f.id = r.floor_id
+                 left join room_type rt on rt.name = r.type_name
+        where r.id = #{id}
+    </select>
+
+    <!-- 房间及房间设备VO resultMap -->
+    <resultMap id="roomVoWithDeviceResultMap" type="com.xhzb.nursing.domain.vo.RoomVo">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="floorId" column="floor_id"/>
+        <result property="floorName" column="fname"/>
+        <result column="price" property="price"/>
+        <collection property="deviceVos" ofType="com.xhzb.nursing.domain.vo.DeviceVo"
+                    notNullColumn="device_id">
+            <id column="device_id" property="id"/>
+            <result column="device_iot_id" property="iotId"/>
+            <result column="device_name" property="deviceName"/>
+            <result column="device_product_key" property="productKey"/>
+            <result column="device_product_name" property="productName"/>
+        </collection>
+    </resultMap>
+
+    <!-- 查询指定楼层下所有有设备的房间及其房间级设备 -->
+    <select id="selectRoomsWithDevicesByFloorId" resultMap="roomVoWithDeviceResultMap">
+        SELECT r.id,
+               r.code,
+               r.floor_id,
+               f.name  AS fname,
+               rt.price,
+               d.id    AS device_id,
+               d.iot_id AS device_iot_id,
+               d.device_name,
+               d.product_key AS device_product_key,
+               d.product_name AS device_product_name
+        FROM room r
+        LEFT JOIN floor f ON f.id = r.floor_id
+        LEFT JOIN room_type rt ON rt.name = r.type_name
+        LEFT JOIN device d ON CAST(d.binding_location AS UNSIGNED) = r.id
+            AND d.physical_location_type = 1
+        WHERE r.floor_id = #{floorId}
+          AND r.is_deleted = 0
+          AND EXISTS (
+              SELECT 1 FROM device d1
+              WHERE CAST(d1.binding_location AS UNSIGNED) = r.id
+                AND d1.physical_location_type = 1
+              UNION
+              SELECT 1 FROM bed b2
+              INNER JOIN device d2 ON CAST(d2.binding_location AS UNSIGNED) = b2.id
+                AND d2.physical_location_type = 2
+              WHERE b2.room_id = r.id
+          )
+        ORDER BY r.sort
+    </select>
+
+    <!-- 床位及床位设备VO resultMap -->
+    <resultMap id="bedVoWithDeviceResultMap" type="com.xhzb.nursing.domain.vo.BedVo">
+        <id column="bid" property="id"/>
+        <result column="bed_number" property="bedNumber"/>
+        <result column="bed_status" property="bedStatus"/>
+        <result column="room_id" property="roomId"/>
+        <result column="ename" property="ename"/>
+        <result column="eid" property="elderId"/>
+        <collection property="deviceVos" ofType="com.xhzb.nursing.domain.vo.DeviceVo"
+                    notNullColumn="device_id">
+            <id column="device_id" property="id"/>
+            <result column="device_iot_id" property="iotId"/>
+            <result column="device_name" property="deviceName"/>
+            <result column="device_product_key" property="productKey"/>
+            <result column="device_product_name" property="productName"/>
+        </collection>
+    </resultMap>
+
+    <!-- 查询指定房间下的床位、入住老人、床位级设备 -->
+    <select id="selectBedsWithDevicesByRoomIds" resultMap="bedVoWithDeviceResultMap">
+        SELECT b.id          AS bid,
+               b.bed_number,
+               b.bed_status,
+               b.room_id,
+               e.name        AS ename,
+               e.id          AS eid,
+               d.id          AS device_id,
+               d.iot_id      AS device_iot_id,
+               d.device_name,
+               d.product_key AS device_product_key,
+               d.product_name AS device_product_name
+        FROM bed b
+        LEFT JOIN elder e ON e.bed_id = b.id
+        LEFT JOIN device d ON CAST(d.binding_location AS UNSIGNED) = b.id
+            AND d.physical_location_type = 2
+        WHERE b.room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+        ORDER BY b.sort
+    </select>
+</mapper>
