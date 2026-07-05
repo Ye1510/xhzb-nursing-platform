@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhzb.nursing.mapper.NursingTaskMapper">
+
+    <resultMap type="com.xhzb.nursing.domain.vo.NursingTaskVo" id="NursingTaskVoResult">
+        <result property="id" column="id"/>
+        <result property="nursingId" column="nursing_id"/>
+        <result property="projectId" column="project_id"/>
+        <result property="projectName" column="project_name"/>
+        <result property="elderId" column="elder_id"/>
+        <result property="elderName" column="elder_name"/>
+        <result property="bedNumber" column="bed_number"/>
+        <result property="estimatedServerTime" column="estimated_server_time"/>
+        <result property="realServerTime" column="real_server_time"/>
+        <result property="mark" column="mark"/>
+        <result property="cancelReason" column="cancel_reason"/>
+        <result property="status" column="status"/>
+        <result property="taskImage" column="task_image"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="nursingLevelName" column="nursing_level_name"/>
+        <result property="age" column="age"/>
+        <result property="sex" column="sex"/>
+        <result property="updater" column="updater"/>
+        <collection property="nursingName" ofType="java.lang.String">
+            <result column="nursing_name"/>
+        </collection>
+    </resultMap>
+
+    <!-- 分页查询护理任务列表 -->
+    <select id="selectNursingTaskVoPage" resultMap="NursingTaskVoResult">
+        SELECT t.id, t.nursing_id, t.project_id, t.project_name,
+               t.elder_id, t.elder_name, t.bed_number,
+               t.estimated_server_time, t.real_server_time,
+               t.mark, t.cancel_reason, t.status, t.task_image,
+               t.create_time, t.update_time, t.remark,
+               su.nick_name AS nursing_name
+        FROM nursing_task t
+        LEFT JOIN sys_user su ON FIND_IN_SET(su.user_id, t.nursing_id)
+        <where>
+            <if test="elderName != null and elderName != ''">
+                AND t.elder_name LIKE CONCAT('%', #{elderName}, '%')
+            </if>
+            <if test="nurseId != null">
+                AND FIND_IN_SET(#{nurseId}, t.nursing_id)
+            </if>
+            <if test="projectId != null">
+                AND t.project_id = #{projectId}
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND t.estimated_server_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND t.estimated_server_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY t.estimated_server_time DESC
+    </select>
+
+    <!-- 查询护理任务详情（含老人年龄性别、护理等级、护理员姓名、执行人） -->
+    <select id="selectNursingTaskVoById" resultMap="NursingTaskVoResult">
+        SELECT t.id, t.nursing_id, t.project_id, t.project_name,
+               t.elder_id, t.elder_name, t.bed_number,
+               t.estimated_server_time, t.real_server_time,
+               t.mark, t.cancel_reason, t.status, t.task_image,
+               t.create_time, t.update_time, t.remark,
+               TIMESTAMPDIFF(YEAR, e.birthday, CURDATE()) AS age,
+               CASE e.sex WHEN 0 THEN '女' WHEN 1 THEN '男' ELSE '' END AS sex,
+               ci.nursing_level_name AS nursing_level_name,
+               su.nick_name AS nursing_name,
+               su2.nick_name AS updater
+        FROM nursing_task t
+        LEFT JOIN elder e ON t.elder_id = e.id
+        LEFT JOIN check_in ci ON ci.elder_id = e.id AND ci.status = 0
+        LEFT JOIN sys_user su ON FIND_IN_SET(su.user_id, t.nursing_id)
+        LEFT JOIN sys_user su2 ON t.update_by = su2.user_id
+        WHERE t.id = #{id}
+    </select>
+
+</mapper>
