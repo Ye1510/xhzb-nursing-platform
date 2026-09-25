@@ -72,24 +72,12 @@ JWT 存 Redis，取两者之长：
 
 ## 4. RAG 检索增强问答
 
-### 问题
+> 本节只保留索引。完整设计说明（两条链路对比、流程图、四个参数的取舍依据、提示词边界条件、两阶段评估与可降级设计）已独立到 **[AI 能力](ai-features.md)**。
 
-大模型不知道本机构的护理规范，直接问会输出通用但不准确的内容；微调成本高且知识更新慢。
+**一句话**：机构护理规范文档切分后向量化存入 Redis Stack，提问时检索相似度 ≥ 0.7 的 top 5 片段拼进 Prompt，交给通义千问流式作答；多轮上下文按会话 ID 隔离并落 Redis 持久化。
 
-### 做法与参数取舍
-
-| 参数 | 取值 | 为什么是这个值 |
-| --- | --- | --- |
-| 切分长度 | 500 token | 太短会切断语义，太长会稀释检索精度 |
-| 最小块 | 200 字符 | 过滤掉切分产生的碎片 |
-| 相似度阈值 | 0.7 | 低于此值的片段宁可不给，避免引入噪声污染答案 |
-| topK | 5 | 兼顾上下文长度与召回覆盖率 |
-| 嵌入模型 | `text-embedding-v3`，1024 维 | 中文语义表现好，维度适中 |
-| 向量库 | Redis Stack | 复用已有 Redis 运维体系，无需额外引入向量数据库 |
-
-**链路**：`知识库上传 → 切分 → Embedding → RedisVectorStore；提问 → 检索 topK → 拼 Prompt → 通义千问 → 流式输出`
-
-**相关类**：`xhzb-nursing-platform` → `SpringAiConfig`、`RedisVectorConfig`、`ChatController`
+**相关类**：`xhzb-nursing-platform` → `SpringAiConfig`、`RedisVectorConfig`、`ChatController`、`RedisChatMemoryService`
+**配置**：`spring.ai.openai.*`（模型 `qwen3.7-max`、嵌入 `text-embedding-v3` 1024 维），API Key 走 `OPENAI_API_KEY` 环境变量
 
 ---
 
